@@ -3,7 +3,7 @@
 All notifications are sent to the Telegram chat(s) configured via `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (comma-separated for multiple chats).
 
 ---
-
+..
 ## 1. New Visitor
 
 | Field | Value |
