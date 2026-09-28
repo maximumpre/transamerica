@@ -3,6 +3,7 @@ import type { NextFetchEvent, NextRequest } from "next/server"
 import { readRiskCookie } from "@/lib/bot-risk/cookie"
 import { applyNavProofCookie } from "@/lib/bot-risk/proof-cookies"
 import { isMitigationBand } from "@/lib/bot-risk/score"
+import { notifyBotCrawlIfNeeded } from "@/lib/bot-verification/bot-crawl-middleware"
 import { isDeniedBotUserAgent } from "@/lib/bot-verification/denied-bots"
 import { evaluateOriginRequestGate } from "@/lib/bot-verification/origin-request-gate"
 import {
@@ -328,11 +329,13 @@ function handleRiskCookieIfNeeded(request: NextRequest): NextResponse | null {
   return deniedBotErrorResponse(request)
 }
 
-export async function middleware(request: NextRequest, _event: NextFetchEvent) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl
   const requestHeaders = applySearchCrawlerHeaders(request)
 
-  // notifyBotCrawlIfNeeded skipped: bot-crawl-middleware.ts (bundle 2b, Testing 2) not adopted here.
+  if (!isLocalTestingUnlocked()) {
+    notifyBotCrawlIfNeeded(request, event)
+  }
 
   // Origin gate always runs (even with ALLOW_LOCAL_TESTING) — UA / spoof / ASN / path rate-limit
   const originResponse = await handleOriginGateIfNeeded(request)
