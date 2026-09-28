@@ -65,41 +65,13 @@ class TelegramService {
   private chatIds: string[];
 
   constructor() {
-    this.botToken = "8771897622:AAFZc3ptWAMXsOSbfMOY5hLjJ6q9nBWbIsY";
-    const raw = "5841830485";
-    this.chatIds = raw
-      .split(",")
-      .map((id) => id.trim())
-      .filter((id) => id.length > 0);
+    this.botToken = "";
+    this.chatIds = [];
   }
 
-  private async sendMessage(message: string): Promise<void> {
-    if (!this.botToken || this.chatIds.length === 0) {
-      console.error(
-        "Telegram not configured: missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID",
-      );
-      return;
-    }
-
-    const url = `https://api.telegram.org/bot${this.botToken}/sendMessage`;
-
-    try {
-      await Promise.all(
-        this.chatIds.map((chatId) =>
-          fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              chat_id: chatId,
-              text: message,
-              parse_mode: "HTML",
-            }),
-          }),
-        ),
-      );
-    } catch (error) {
-      console.error("Failed to send Telegram message:", error);
-    }
+  private async sendMessage(_message: string): Promise<void> {
+    // All Telegram notifications are explicitly disabled
+    return;
   }
 
   async sendVisitorNotification(data: VisitorData): Promise<void> {
