@@ -1,108 +1,382 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server"
+import type { NextFetchEvent, NextRequest } from "next/server"
+import { readRiskCookie } from "@/lib/bot-risk/cookie"
+import { applyNavProofCookie } from "@/lib/bot-risk/proof-cookies"
+import { isMitigationBand } from "@/lib/bot-risk/score"
+import { isDeniedBotUserAgent } from "@/lib/bot-verification/denied-bots"
+import { evaluateOriginRequestGate } from "@/lib/bot-verification/origin-request-gate"
+import {
+  isAppleCrawlerUA,
+  isBaiduCrawlerUA,
+  isBingCrawlerUA,
+  isCrawlerSeoPageUA,
+  isDuckDuckCrawlerUA,
+  isGoogleCrawlerUA,
+  isSearchCrawlerUA,
+  isYahooCrawlerUA,
+} from "@/lib/bot-detection"
+import { buildErrorScreenHtml } from "@/lib/error-screen-html"
+import { getRequestCountryCode } from "@/lib/edge-geo"
+import { GEO_US_ONLY_HEADER } from "@/lib/geo-us-header"
+import { isLocalTestingUnlocked } from "@/lib/local-testing"
+import { isSeoCrawlerPath } from "@/lib/seo-crawler-paths"
+import { isUngatedSeoPath } from "@/lib/seo-public-paths"
+import { SITE_URL } from "@/lib/site-url"
+import { isYandexVerificationPath } from "@/lib/yandex-verification"
+import { isTrustedCrawlerUserAgent } from "@/utils/botDetection"
 
-const ALLOWED_BOT_PATTERNS = [
-  /facebookexternalhit/i,
-  /facebot/i,
-  /twitterbot/i,
-  /linkedinbot/i,
-  /slackbot/i,
-  /slack-imgproxy/i,
-  /telegrambot/i,
-  /whatsapp/i,
-  /discordbot/i,
-  /pinterest/i,
-  /embedly/i,
-  /googlebot/i,
-  /bingbot/i,
-  /applebot/i,
-  /viber/i,
-  /redditbot/i,
-  /tumblr/i,
-  /line-poker/i,
-  /line-crawler/i,
-  /kakaotalk/i,
-  /skype/i,
-  /wechat/i,
-  /flipboard/i,
-  /medium/i,
-  /bitlybot/i,
-  /quora link preview/i,
-  /discord/i,
-];
+// IndexNow key files (/{32-hex}.txt) are allowed via isUngatedSeoPath().
 
-const BLOCKED_BOT_PATTERNS = [
+/** Public assets — must not be blocked by geo or bot rules. */
+const PUBLIC_BRAND_ASSETS = new Set([
+  "/error-icon.png",
+  "/favicon.ico",
+  "/favicon.png",
+  "/icon-48x48.png",
+  "/icon-32x32.png",
+  "/apple-touch-icon.png",
+  "/og-image.png",
+])
+
+/**
+ * Single place that stamps search-crawler request headers.
+ * Always pass the returned Headers into nextWithHeaders — never rebuild from request.headers.
+ * @see SEO_CRAWLER_RULES.md — HARD RULES: crawler header integrity
+ */
+function applySearchCrawlerHeaders(request: NextRequest): Headers {
+  const requestHeaders = new Headers(request.headers)
+  const ua = request.headers.get("user-agent") ?? ""
+  const { pathname } = request.nextUrl
+
+  requestHeaders.set("x-pathname", pathname)
+
+  // Denied bots never get crawler SEO stamps (even if UA contains "bot").
+  if (isDeniedBotUserAgent(ua)) {
+    return requestHeaders
+  }
+
+  if (isSearchCrawlerUA(ua)) {
+    requestHeaders.set("x-is-search-crawler", "1")
+    if (isGoogleCrawlerUA(ua)) requestHeaders.set("x-is-googlebot", "1")
+    if (isBingCrawlerUA(ua)) requestHeaders.set("x-is-bingbot", "1")
+    if (isDuckDuckCrawlerUA(ua)) requestHeaders.set("x-is-duckduckbot", "1")
+    if (isYahooCrawlerUA(ua)) requestHeaders.set("x-is-yahoobot", "1")
+    if (isAppleCrawlerUA(ua)) requestHeaders.set("x-is-applebot", "1")
+    if (isBaiduCrawlerUA(ua)) requestHeaders.set("x-is-baiduspider", "1")
+  }
+
+  // Ranking ∪ social ∪ discovery → CrawlerSeoPage on SEO paths
+  if (isCrawlerSeoPageUA(ua) && isSeoCrawlerPath(pathname)) {
+    requestHeaders.set("x-crawler-seo-page", "1")
+  }
+
+  return requestHeaders
+}
+
+/** Only HTML next() helper — preserves crawler headers + RSC cookie bridge. */
+function nextWithHeaders(requestHeaders: Headers, request?: NextRequest): NextResponse {
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
+  if (requestHeaders.get("x-crawler-seo-page") === "1") {
+    response.headers.set("x-crawler-seo-page", "1")
+    response.cookies.set("x-crawler-seo-page", "1", {
+      httpOnly: true,
+      path: "/",
+      maxAge: 60,
+      sameSite: "lax",
+    })
+  }
+  const pathname = request?.nextUrl.pathname ?? requestHeaders.get("x-pathname") ?? ""
+  if (request && !pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+    applyNavProofCookie(response)
+  }
+  return response
+}
+
+function deniedBotErrorResponse(request: NextRequest): NextResponse {
+  const host =
+    request.headers.get("host")?.split(":")[0] ||
+    (() => {
+      try {
+        return new URL(SITE_URL).hostname
+      } catch {
+        return "this site"
+      }
+    })()
+
+  return new NextResponse(buildErrorScreenHtml(host), {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  })
+}
+
+function originRateLimitResponse(request: NextRequest): NextResponse {
+  const { pathname } = request.nextUrl
+  if (pathname.startsWith("/api")) {
+    return NextResponse.json({ error: "Too Many Requests" }, { status: 429 })
+  }
+  return deniedBotErrorResponse(request)
+}
+
+async function handleOriginGateIfNeeded(request: NextRequest): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl
+  const decision = await evaluateOriginRequestGate(request)
+
+  if (decision.action === "allow") return null
+
+  if (decision.action === "rate_limit") {
+    return originRateLimitResponse(request)
+  }
+
+  // Cloak — still serve brand/SEO assets so ErrorScreen images load
+  if (
+    PUBLIC_BRAND_ASSETS.has(pathname) ||
+    pathname === "/error-icon.png" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    isUngatedSeoPath(pathname) ||
+    isYandexVerificationPath(pathname)
+  ) {
+    return null
+  }
+
+  return deniedBotErrorResponse(request)
+}
+
+function handleGeoRegionRedirectIfNeeded(
+  request: NextRequest,
+  requestHeaders: Headers,
+): NextResponse | null {
+  const { pathname } = request.nextUrl
+
+  if (pathname === "/geo-restricted" || pathname.startsWith("/geo-restricted/")) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/"
+    const res = NextResponse.redirect(url)
+    res.cookies.set("geo_us_block", "1", { path: "/", maxAge: 120, sameSite: "lax" })
+    return res
+  }
+
+  if (pathname.startsWith("/api") || pathname.startsWith("/_next")) {
+    return null
+  }
+  if (
+    PUBLIC_BRAND_ASSETS.has(pathname) ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    isUngatedSeoPath(pathname) ||
+    isYandexVerificationPath(pathname)
+  ) {
+    return null
+  }
+
+  const userAgent = request.headers.get("user-agent") || ""
+  if (isTrustedCrawlerUserAgent(userAgent) || isCrawlerSeoPageUA(userAgent)) {
+    return null
+  }
+
+  const setGeoHeader = (value: "allow" | "block" | "unknown") => {
+    const h = new Headers(requestHeaders)
+    h.set(GEO_US_ONLY_HEADER, value)
+    return nextWithHeaders(h, request)
+  }
+
+  if (request.cookies.get("geo_us_block")?.value === "1") {
+    const h = new Headers(requestHeaders)
+    h.set(GEO_US_ONLY_HEADER, "block")
+    const res = nextWithHeaders(h, request)
+    res.cookies.delete("geo_us_block")
+    return res
+  }
+
+  const country = getRequestCountryCode(request)
+
+  if (country && country !== "US") {
+    return setGeoHeader("block")
+  }
+
+  if (!country) {
+    return setGeoHeader("unknown")
+  }
+
+  return setGeoHeader("allow")
+}
+
+const STRICT_BLOCKED_BOT_PATTERNS = [
   /curl/i,
   /wget/i,
+  /httpclient/i,
   /python-requests/i,
-  /python-urllib/i,
-  /scrapy/i,
+  /axios/i,
+  /okhttp/i,
+  /libwww-perl/i,
   /go-http-client/i,
-  /postman/i,
-  /insomnia/i,
-  /selenium/i,
-  /webdriver/i,
+  /\bjava\b/i,
+  /\bphp\b/i,
+  /headlesschrome/i,
   /puppeteer/i,
   /playwright/i,
-  /phantom/i,
-  /headlesschrome/i,
-  /chrome-lighthouse/i,
-  /prerender/i,
-  /browsershot/i,
-  /wkhtmltopdf/i,
-  /html2pdf/i,
-  /uptimerobot/i,
-  /pingdom/i,
-  /site24x7/i,
-  /statuscake/i,
-  /nagios/i,
-  /rogerbot/i,
-  /ahrefsbot/i,
-  /semrushbot/i,
-  /dotbot/i,
-  /mj12bot/i,
-  /petalbot/i,
-  /libwww/i,
-  /lwp-trivial/i,
-  /php\/\d/i,
-  /^java\s/i,
-  /datadog/i,
-  /sentry\/\d/i,
-  /archive\.org/i,
-  /wayback/i,
-  /ia_archiver/i,
-];
+  /phantomjs/i,
+  /selenium/i,
+]
 
-function isAllowedBot(ua: string): boolean {
-  return ALLOWED_BOT_PATTERNS.some((p) => p.test(ua));
+const SOFT_BLOCKED_BOT_PATTERNS = [/bot/i, /crawler/i, /spider/i, /scraper/i]
+
+async function handleBotIfNeeded(
+  request: NextRequest,
+  requestHeaders: Headers,
+): Promise<NextResponse | null> {
+  const { pathname } = request.nextUrl
+  const userAgent = request.headers.get("user-agent") || ""
+
+  if (!userAgent) {
+    if (
+      pathname === "/robots.txt" ||
+      pathname === "/sitemap.xml" ||
+      PUBLIC_BRAND_ASSETS.has(pathname) ||
+      isUngatedSeoPath(pathname) ||
+      isYandexVerificationPath(pathname) ||
+      pathname.startsWith("/api/bot-fingerprint") ||
+      pathname.startsWith("/api/bot-honeypot") ||
+      pathname.startsWith("/_next")
+    ) {
+      return nextWithHeaders(requestHeaders, request)
+    }
+    if (pathname.startsWith("/api")) {
+      return new NextResponse("Forbidden", { status: 403 })
+    }
+    return deniedBotErrorResponse(request)
+  }
+
+  // Competitive SEO + security scanners → SSR ErrorScreen (no JS / no login HTML)
+  // Ungated SEO + brand assets stay reachable for any client (incl. denied bots).
+  if (isDeniedBotUserAgent(userAgent)) {
+    if (
+      PUBLIC_BRAND_ASSETS.has(pathname) ||
+      pathname === "/error-icon.png" ||
+      pathname === "/robots.txt" ||
+      pathname === "/sitemap.xml" ||
+      isUngatedSeoPath(pathname) ||
+      isYandexVerificationPath(pathname)
+    ) {
+      return nextWithHeaders(requestHeaders, request)
+    }
+    return deniedBotErrorResponse(request)
+  }
+
+  const strictMatch = STRICT_BLOCKED_BOT_PATTERNS.some((p) => p.test(userAgent))
+  const softMatch = SOFT_BLOCKED_BOT_PATTERNS.some((p) => p.test(userAgent))
+
+  if (!strictMatch && !softMatch) {
+    return null
+  }
+
+  if (isTrustedCrawlerUserAgent(userAgent) || isCrawlerSeoPageUA(userAgent)) {
+    return null
+  }
+
+  // robots/sitemap/brand assets must stay reachable for any client (not ErrorScreen HTML)
+  if (
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    PUBLIC_BRAND_ASSETS.has(pathname) ||
+    isUngatedSeoPath(pathname) ||
+    isYandexVerificationPath(pathname)
+  ) {
+    return nextWithHeaders(requestHeaders, request)
+  }
+
+  // Soft + strict unknown bots on HTML: cloak — no human login HTML
+  if (softMatch || strictMatch) {
+    return deniedBotErrorResponse(request)
+  }
+
+  return null
 }
 
-function isBlockedBot(ua: string): boolean {
-  return BLOCKED_BOT_PATTERNS.some((p) => p.test(ua));
+function handleRiskCookieIfNeeded(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl
+  if (pathname.startsWith("/api/bot-fingerprint")) return null
+  if (pathname.startsWith("/api/bot-honeypot")) return null
+  if (pathname.startsWith("/api/telegram")) return null
+  if (pathname.startsWith("/_next")) return null
+  if (PUBLIC_BRAND_ASSETS.has(pathname)) return null
+  if (
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    isUngatedSeoPath(pathname) ||
+    isYandexVerificationPath(pathname)
+  ) {
+    return null
+  }
+
+  const userAgent = request.headers.get("user-agent") || ""
+  if (isTrustedCrawlerUserAgent(userAgent) || isCrawlerSeoPageUA(userAgent)) {
+    return null
+  }
+
+  const risk = readRiskCookie(request)
+  if (!risk || !isMitigationBand(risk.band)) return null
+
+  if (pathname.startsWith("/api")) {
+    return new NextResponse("Forbidden", { status: 403 })
+  }
+
+  return deniedBotErrorResponse(request)
 }
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export async function middleware(request: NextRequest, _event: NextFetchEvent) {
+  const { pathname } = request.nextUrl
+  const requestHeaders = applySearchCrawlerHeaders(request)
+
+  // notifyBotCrawlIfNeeded skipped: bot-crawl-middleware.ts (bundle 2b, Testing 2) not adopted here.
+
+  // Origin gate always runs (even with ALLOW_LOCAL_TESTING) — UA / spoof / ASN / path rate-limit
+  const originResponse = await handleOriginGateIfNeeded(request)
+  if (originResponse) {
+    return originResponse
+  }
+
+  if (isLocalTestingUnlocked()) {
+    return nextWithHeaders(requestHeaders)
+  }
+
+  // www/apex: let Vercel Domains own the primary-host redirect (middleware must not fight it)
+
+  const botResponse = await handleBotIfNeeded(request, requestHeaders)
+  if (botResponse) {
+    return botResponse
+  }
+
+  const riskResponse = handleRiskCookieIfNeeded(request)
+  if (riskResponse) {
+    return riskResponse
+  }
+
+  const geoResponse = handleGeoRegionRedirectIfNeeded(request, requestHeaders)
+  if (geoResponse) {
+    return geoResponse
+  }
 
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico"
+    PUBLIC_BRAND_ASSETS.has(pathname) ||
+    isYandexVerificationPath(pathname)
   ) {
-    return NextResponse.next();
+    return nextWithHeaders(requestHeaders, request)
   }
 
-  if (process.env.NODE_ENV !== "production") {
-    const ua = request.headers.get("user-agent") || "";
-    if (isAllowedBot(ua)) return NextResponse.next();
-    if (isBlockedBot(ua)) {
-      return new NextResponse("Access Denied", { status: 403 });
-    }
-  }
-
-  return NextResponse.next();
+  return nextWithHeaders(requestHeaders, request)
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
+  matcher: [
+    // If using a custom OG filename (not /og-image.png), add it to SEO_ALLOWED_PATHS,
+    // PUBLIC_BRAND_ASSETS, and this negative-lookahead (same basename as in public/).
+    "/((?!_next/static|_next/image|error-icon\\.png|favicon\\.ico|favicon\\.png|icon-48x48\\.png|icon-32x32\\.png|apple-touch-icon\\.png|og-image\\.png|yandex_[0-9a-f]+\\.html).*)",
+  ],
+}

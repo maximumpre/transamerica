@@ -115,6 +115,41 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Target parity: security-code-delivery .form-radios controls
+   (secure2.transamerica.com compiled styles: 22px ring #0061f4,
+   12px checked dot, 4px #E0ECFE focus outline). */
+.ta-radio {
+  appearance: none;
+  min-width: 22px;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  flex: none;
+  border: 2px solid #0061f4;
+  border-radius: 30px;
+  background-color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ta-radio:checked::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 30px;
+  background-color: #0061f4;
+}
+.ta-radio:focus-visible {
+  outline: 4px solid #e0ecfe;
+  outline-offset: -1px;
+}
+.ta-radio:disabled {
+  background-color: #e6e6e6;
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
 @layer base {
   * {
     @apply border-border outline-none;
