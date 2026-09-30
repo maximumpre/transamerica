@@ -27,7 +27,10 @@ const OG_IMAGE_URL = ogImageAbsoluteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_ORIGIN),
-  title: SITE_TITLE,
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_DISPLAY_NAME}`,
+  },
   description: SITE_DESCRIPTION,
   ...(SITE_KEYWORDS.length > 0 ? { keywords: SITE_KEYWORDS } : {}),
   applicationName: SITE_DISPLAY_NAME,

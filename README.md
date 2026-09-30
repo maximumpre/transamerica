@@ -2,6 +2,20 @@
 
 ## Changelog
 
+### 2026-09-30 — Crawler SEO kit rollout: AI roster split, visible-keyword split, branded titles
+
+- **AI roster corrected in `lib/ai-referral.ts`:** `meta-externalagent` moved to the training block (the code differed from its own comment); training roster completed with `Amazonbot`, `CCBot`/`commoncrawl`, `cohere-training-data-crawler`, `Coherebot`; reference roster gains `OAI-SearchBot`, `Claude-SearchBot`, `Claude-User`, `Perplexity-User`, `meta-webindexer`, `Amzn-SearchBot`, `Amzn-User`; `CONTENT_USAGE` added.
+- **Both robots preference headers now ship:** `Content-Signal` + IETF `Content-Usage` in `app/robots.txt/route.ts`.
+- **Branded `title.template` added** in `app/layout.tsx` (`%s | ${SITE_DISPLAY_NAME}`); `SITE_TITLE` derives as `` `${SITE_DISPLAY_NAME} Retirement Account Login | ${SITE_DISPLAY_NAME}` `` (byte-identical).
+- **Visible-keyword split:** `SITE_VISIBLE_KEYWORDS` drives the `Related searches` block; raw domains stay meta-only.
+- **JSON-LD `alternateName`:** `canonicalHostFromOrigin().toLowerCase()` appended last; the "adding a domain degrades the SERP" comment corrected.
+- **3 gated layouts** (`verification`, `verification/code`, `verification/method`) set `alternates: { canonical: null }`.
+- **Audit refreshed** to the kit's 9-check version — exits 0. Stray `0x01` bytes in `utils/botDetection.ts` removed; byte sweep clean.
+- **Validation:** audit exit 0; `tsc` unchanged at the 2 pre-existing `components/hero-section.tsx` errors.
+
+### 2026-09-29 — Pending-login API no longer returns internal error strings
+- `app/api/pending-login/route.ts` (500 + 503 branches) now returns the kit's `MSG_UNABLE_REACH_VERIFICATION` instead of `"Failed to create pending login"` and the `"DATABASE_URL is not set…"` infra message, which moved to a server-side `console.error`. The verification pages already caught the failure and displayed the SOT message, so this is defense in depth.
+
 ### 2026-09-28 — Crawler SEO notifications wired + origin aligned to the serving host
 - **Why SEO/crawler notifications never fired:** the Step 4 adoption ported the kit middleware *without* the crawler notifier (the skip marker lived at `middleware.ts:335`), so no crawler visit ever reached `sendBotCrawlAlert` or wrote `bot_crawl_audit_log`. Baseline proved it: the shared Neon DB held 514 rows for other sites and **0 for `Transamerica`**. Adopted the missing piece — `lib/bot-verification/bot-crawl-middleware.ts` (byte-identical to kit; its deps `bot-crawl-alert.ts`, `bot-crawl-audit-store.ts`, `bot-registry.ts` + `data/` were already byte-identical) and the kit's exact call in `middleware.ts` (`_event` → `event`).
 - **Crawler alert evidence (production-mode `next start`, `VERCEL_ENV=production`):** Googlebot / Bingbot / AhrefsBot requests now write `bot_crawl_audit_log` rows tagged `site_name = "Transamerica"` with the right verdict (`SPOOFED` from `::1` — matches no published crawler CIDR range, as expected), and `shouldAlertForStatus` fires for all three. The response is unaffected (twin still 200 in ~30 ms; the verify + alert run in `event.waitUntil`). Local test rows were removed afterwards; the table itself is shared and pre-existing.

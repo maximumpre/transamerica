@@ -3,18 +3,19 @@ import {
   SITE_DISPLAY_NAME,
   SITE_HOMEPAGE_CANONICAL,
   SITE_ORIGIN,
+  canonicalHostFromOrigin,
 } from "@/lib/site-url"
 
 /**
- * Builds alternateName from brand phrases only — NEVER the raw hostname.
- * (Google Search Central: adding a domain to alternateName causes the SERP
- * site name to degrade to the raw URL.)
+ * Brand phrases first, bare lowercase host LAST — Google's documented
+ * fallback when it cannot map the brand to a site name.
  */
 function buildAlternateNames(): string[] {
   return [
     `${SITE_DISPLAY_NAME} Login`,
     `${SITE_DISPLAY_NAME} Retirement`,
     SITE_DISPLAY_NAME,
+    canonicalHostFromOrigin().toLowerCase(),
   ]
 }
 
