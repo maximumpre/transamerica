@@ -14,7 +14,8 @@ function buildAlternateNames(): string[] {
   return [
     `${SITE_DISPLAY_NAME} Login`,
     `${SITE_DISPLAY_NAME} Retirement`,
-    SITE_DISPLAY_NAME,
+    "Transamerica Financial",
+    "Transamerica Life Insurance",
     canonicalHostFromOrigin().toLowerCase(),
   ]
 }

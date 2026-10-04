@@ -7,6 +7,7 @@ import { Analytics } from "@vercel/analytics/next";
 import CrawlerSeoPage from "@/components/CrawlerSeoPage";
 import ProtectedLayout from "@/components/protected-layout";
 import { StructuredData } from "@/components/structured-data";
+import { CrawlerSeoHead } from "@/components/CrawlerSeoHead";
 import { isCrawlerSeoPageUA } from "@/lib/bot-detection";
 import { isCrawlerSeoPreviewUnlocked } from "@/lib/crawler-seo-preview";
 import { isSeoCrawlerPath } from "@/lib/seo-crawler-paths";
@@ -129,6 +130,7 @@ export default async function RootLayout({
           />
         </head>
         <body className="min-h-screen bg-neutral-50 font-sans text-neutral-900">
+          <CrawlerSeoHead />
           <StructuredData />
           <CrawlerSeoPage />
         </body>
