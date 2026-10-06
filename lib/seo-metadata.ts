@@ -8,13 +8,15 @@
  * - H1 leads with SITE_DISPLAY_NAME
  */
 
+import { LAYOUT_DESCRIPTION } from "@/lib/meta-description"
 import { buildSiteKeywords } from "@/lib/seo-keywords"
 import { CANONICAL_HOST, SITE_DISPLAY_NAME } from "@/lib/site-url"
 
+export { LAYOUT_DESCRIPTION }
+
 export const SITE_TITLE = `${SITE_DISPLAY_NAME} Retirement Account Login | ${SITE_DISPLAY_NAME}`
 
-export const SITE_DESCRIPTION =
-  "Sign in securely to access your Transamerica retirement account, view plan balances and statements, and manage your workplace benefits online."
+export const SITE_DESCRIPTION = LAYOUT_DESCRIPTION
 
 export const SITE_KEYWORDS: string[] = buildSiteKeywords()
 

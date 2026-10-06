@@ -2,7 +2,12 @@
 
 ## Changelog
 
-### 2026-10-04 — Bing SEO fix: eliminate duplicate head tags
+### 2026-10-06 — Search engine Line 1–4 SERP display, Cloudflare peer ASN detection, and ErrorScreen alt text
+- **Line 1–4 Architecture**: Added `lib/meta-description.ts` with domain-agnostic `LAYOUT_DESCRIPTION` (144 chars), re-exported through `lib/seo-metadata.ts` as `SITE_DESCRIPTION` to match Line 1–4 snippet formatting standards.
+- **Bingbot Crawler Delivery & Cloudflare ASN**: In `lib/client-ip.ts`, replaced unverified `cf-connecting-ip` with peer ASN verification (`13335` / `209242`) and `cf-ray` authentication. In `ReffererProvider.tsx`, initialized `isLoading` to `!allowLocalTesting && !serverIsBot` and `isVerifiedBot` to `Boolean(serverIsBot)`, eliminating blank `null` body returns on server-side rendering for verified search crawlers.
+- **Accessibility & Alt Attribute Fix**: Set `alt="Site offline notice"` in both `components/ErrorScreen.tsx` and `lib/error-screen-html.ts` to clear Bing's missing alt attribute indexing warnings.
+- **Verification**: Prebuild audits passed cleanly (exit code 0).
+
 - **Removed Duplicate Tags**: Deleted `CrawlerSeoHead` from `app/layout.tsx` and removed the component, eliminating duplicate `<title>`, `<meta description>`, and `<link rel="canonical">` tags hoisted by React 19 alongside Next.js App Router's native `metadata`.
 - **Verification**: `scripts/audit-crawler-seo.mjs` exits 0; single canonical, title, and description tags verified.
 
