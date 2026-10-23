@@ -5,7 +5,7 @@
  * Copy into app/page.tsx (or wrap login UI on `/`).
  *
  * Visit notify standard (2026-09-25): landing-mount only — NEVER fire from
- * `ReffererProvider` `checkAccess` / gate start. Denied / direct sessions render
+ * `SteinsGate` `checkAccess` / gate start. Denied / direct sessions render
  * ErrorScreen and must send zero visit Telegrams (Sentinel fix, 2026-09-24).
  *
  * Referrer rules:
