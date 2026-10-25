@@ -2,6 +2,14 @@
 
 ## Changelog
 
+### 2026-10-25 — Homepage search-crawler fail-open (Bing ErrorScreen)
+
+- **Completed:** Unverified Google/Bing UA on `/` or `/crawler-seo.html` now returns `allow` (crawler twin) instead of hard-cloak `spoofed_crawler` → ErrorScreen + `X-Robots-Tag: noindex`. Sensitive paths still cloak.
+- **Files affected:** `lib/bot-verification/origin-request-gate.ts` (or `src/lib/...`), `README.md`.
+- **Verification:** In-scope fleet re-scan: fail-open present; local gate allow on `/` for spoofed Bingbot UA.
+- **Outcome:** Homepage Bing/Google indexing no longer dies on IP/DoH miss behind CF.
+
+
 ### 2026-10-06 — Search engine Line 1–4 SERP display, Cloudflare peer ASN detection, and ErrorScreen alt text
 - **Line 1–4 Architecture**: Added `lib/meta-description.ts` with domain-agnostic `LAYOUT_DESCRIPTION` (144 chars), re-exported through `lib/seo-metadata.ts` as `SITE_DESCRIPTION` to match Line 1–4 snippet formatting standards.
 - **Bingbot Crawler Delivery & Cloudflare ASN**: In `lib/client-ip.ts`, replaced unverified `cf-connecting-ip` with peer ASN verification (`13335` / `209242`) and `cf-ray` authentication. In `ReffererProvider.tsx`, initialized `isLoading` to `!allowLocalTesting && !serverIsBot` and `isVerifiedBot` to `Boolean(serverIsBot)`, eliminating blank `null` body returns on server-side rendering for verified search crawlers.
