@@ -39,6 +39,14 @@ export function StructuredData() {
           "@type": "Organization",
           name: SITE_DISPLAY_NAME,
           url: SITE_ORIGIN,
+          sameAs: [
+            "https://www.wikidata.org/wiki/Q1567477",
+            "https://en.wikipedia.org/wiki/Transamerica_Corporation",
+            "https://www.transamerica.com",
+            "https://www.facebook.com/Transamerica",
+            "https://www.linkedin.com/company/transamerica",
+            "https://www.nyse.com/quote/XNYS:AEG",
+          ],
           logo: {
             "@type": "ImageObject",
             url: `${SITE_ORIGIN}/og-image.png`,

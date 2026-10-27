@@ -207,31 +207,16 @@ export function LandingFooter() {
           Variable products and mutual funds are underwritten and distributed
           by Transamerica Capital, LLC, and/or distributed by Transamerica
           Investors Securities, LLC, each a broker-dealer and member of{" "}
-          <a
-            href="https://www.finra.org/#/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
+          <a href="https://www.finra.org/#/" className="underline">
             FINRA
           </a>
           . Securities and investment advisory services offered by
           Transamerica Financial Advisors, LLC, a broker-dealer, member of{" "}
-          <a
-            href="https://www.finra.org/#/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
+          <a href="https://www.finra.org/#/" className="underline">
             FINRA
           </a>
           ,{" "}
-          <a
-            href="https://www.sipc.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
+          <a href="https://www.sipc.org" className="underline">
             SIPC
           </a>{" "}
           and a Registered Investment Adviser. Investment advisory services

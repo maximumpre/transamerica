@@ -43,7 +43,7 @@ export const CANONICAL_HOST = new URL(SITE_ORIGIN).hostname
 export const ALLOWED_BACKLINK_HOSTS: readonly string[] = []
 
 /** Bump when homepage SEO copy changes materially — used as sitemap `lastmod`. */
-export const SITE_CONTENT_UPDATED_AT = "2026-09-28T00:00:00.000Z" as const
+export const SITE_CONTENT_UPDATED_AT = "2026-10-27T00:00:00.000Z" as const
 
 /**
  * IndexNow key (APPENDIX A shape: env override, real 32-char hex default).

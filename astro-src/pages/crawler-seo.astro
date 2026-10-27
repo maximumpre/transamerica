@@ -1,0 +1,392 @@
+---
+/**
+ * Allowlisted crawler HTML for Transamerica landing shell.
+ * Zero executable JS. Archetype 4: Retirement Recordkeeper (401k / pension / annuity).
+ */
+import "../../app/globals.css"
+import "../styles/astro-font.css"
+import SeoHead from "../components/seo-head.astro"
+import { SeoJsonLd } from "@/components/seo-json-ld"
+import { PAGE_H1_HEADING } from "@/lib/seo-keywords"
+import { SITE_DESCRIPTION, SITE_VISIBLE_KEYWORDS } from "@/lib/seo-metadata"
+import { SITE_DISPLAY_NAME } from "@/lib/site-url"
+import { BRAND_LOGO_SRC, HERO_IMAGE_SRC } from "../lib/brand-images"
+
+const visibleKeywords = SITE_VISIBLE_KEYWORDS.join(", ")
+
+const TRANAMERICA_HOME_URL = "https://www.transamerica.com"
+const CREATE_ACCOUNT_URL = "https://www.transamerica.com/create-account"
+const FORGOT_USERNAME_URL =
+  "https://secure2.transamerica.com/login/user-role-select/forgotUsername"
+const FORGOT_PASSWORD_URL =
+  "https://secure2.transamerica.com/login/user-role-select/forgotPassword"
+
+const faqItems = [
+  {
+    q: `How do I access my employer-sponsored ${SITE_DISPLAY_NAME} 401(k) or pension account?`,
+    a: `Enter your registered username and password on this ${SITE_DISPLAY_NAME} sign-in page. First-time participants create an account with identity verification (often Social Security number on file). After credentials, complete any security validation code or VoicePass step, then continue to your retirement dashboard.`,
+  },
+  {
+    q: "How do I adjust my paycheck retirement contribution rates and company match?",
+    a: `After signing in, open contribution or deferral settings for your workplace plan. Update pre-tax or Roth deferral percentages within plan limits. Employer match formulas appear on the plan summary when available. Changes typically apply on the next eligible payroll cycle.`,
+  },
+  {
+    q: "Where can I review fund investment options, asset allocations, and rate of return?",
+    a: `Signed-in participants can open fund and fee information, target-date models, and allocation tools from the account menu. Review performance, expense ratios, and rebalancing options your plan offers. Brighten Your Retirement Outlook and OnTrack tools may appear when enabled for your plan.`,
+  },
+  {
+    q: "How do I initiate a rollover from a previous employer retirement plan or IRA?",
+    a: `Start a direct rollover from the rollover or transfers area after authentication. Follow custodian instructions for trustee-to-trustee transfers into your ${SITE_DISPLAY_NAME} account. Keep prior-plan statements handy. Contact participant services or your plan administrator if forms require offline completion.`,
+  },
+  {
+    q: "What are the guidelines for requesting a retirement plan loan or hardship withdrawal?",
+    a: `Loan and hardship rules are plan-specific. After sign-in, open loans or withdrawals to see eligibility, repayment terms, and IRS hardship criteria when your plan permits them. Incomplete documentation delays processing. Call participant support at 800-755-5801 if the option is unavailable online.`,
+  },
+  {
+    q: "How do I update beneficiaries or contact participant support?",
+    a: `Update primary and contingent beneficiaries under Home or Profile after authentication when the plan allows electronic designation. For sign-in help, use Forgot username or Forgot password above. Participant care is available Monday–Friday 8 a.m.–8 p.m. ET at 800-755-5801; VoicePass enrollment is at 800-401-8726.`,
+  },
+] as const
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqItems.map((item) => ({
+    "@type": "Question",
+    name: item.q,
+    acceptedAnswer: { "@type": "Answer", text: item.a },
+  })),
+}
+
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "/" },
+    { "@type": "ListItem", position: 2, name: "Sign In" },
+  ],
+}
+
+const footerMenus = [
+  {
+    title: "Overview",
+    links: [
+      { label: "Newsroom", href: "https://www.transamerica.com/about-us/newsroom" },
+      { label: "Careers", href: "https://www.transamerica.com/about-us/careers" },
+      { label: "Company overview", href: "https://www.transamerica.com/about-us/company-overview" },
+      { label: "Leadership", href: "https://www.transamerica.com/about-us/leadership" },
+    ],
+  },
+  {
+    title: "About us",
+    links: [
+      { label: "Aegon Transamerica Foundation", href: "https://www.transamerica.com/about-us/aegon-transamerica-foundation" },
+      { label: "Diversity and inclusion", href: "https://www.transamerica.com/about-us/diversity-inclusion" },
+      { label: "Our commitments", href: "https://www.transamerica.com/about-us/commitments" },
+      { label: "Partnerships", href: "https://www.transamerica.com/about-us/partnerships" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { label: "Contact us", href: "https://www.transamerica.com/contact-us" },
+      { label: "Create account", href: CREATE_ACCOUNT_URL },
+      { label: "Fraud alert", href: "https://www.transamerica.com/fraud-alert" },
+    ],
+  },
+  {
+    title: "Privacy",
+    links: [
+      { label: "Do not sell or share my personal information", href: "https://www.transamerica.com/do-not-sell-my-info" },
+      { label: "Online privacy statement", href: "https://www.transamerica.com/privacy-policy" },
+    ],
+  },
+] as const
+
+const auxFooterLinks = [
+  { label: "Terms of use", href: "https://www.transamerica.com/terms-of-use" },
+  { label: "Accessibility", href: "https://www.transamerica.com/accessibility-statement" },
+  { label: "Transparency in coverage", href: "https://www.transamerica.com/transparency-in-coverage" },
+  { label: "Business continuity plan summary", href: "https://cdn.brandfolder.io/86JM1UOD/at/qfmlu8-g7hp8w-g9xbbd/113169R1_1120_Business_Continuity_Final.pdf" },
+  { label: "Code of conduct", href: "https://www.transamerica.com/code-of-conduct" },
+  { label: "Compensation", href: "https://www.transamerica.com/compensation-disclosure" },
+  { label: "NYDFS cyber security - agents", href: "https://www.transamerica.com/nydfs-cyber-security-agents" },
+  { label: "Abuse victims", href: "https://www.transamerica.com/abuse-victims" },
+] as const
+
+const socialLinks = [
+  { label: "Facebook", href: "https://www.facebook.com/Transamerica", icon: "fa-brands fa-facebook-f" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/transamerica", icon: "fa-brands fa-linkedin-in" },
+  { label: "Instagram", href: "https://www.instagram.com/transamerica/", icon: "fa-brands fa-instagram" },
+  { label: "X", href: "https://x.com/transamerica", icon: "fa-brands fa-x-twitter" },
+] as const
+---
+
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <SeoHead />
+    <SeoJsonLd />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+  </head>
+  <body class="font-sans antialiased">
+    <div class="min-h-screen bg-white font-sans text-[#281805]">
+      <nav class="flex h-16 items-center bg-white px-5 lg:h-24 lg:px-12">
+        <a href={TRANAMERICA_HOME_URL} rel="nofollow" aria-label={`${SITE_DISPLAY_NAME} home`}>
+          <img
+            src={BRAND_LOGO_SRC}
+            alt={`${SITE_DISPLAY_NAME} logo`}
+            class="w-28 lg:w-44"
+            fetchpriority="high"
+          />
+        </a>
+      </nav>
+
+      <section class="relative h-[370px] overflow-hidden bg-[#63b6ff] lg:h-[280px]">
+        <div class="px-5 pt-8 lg:absolute lg:left-0 lg:top-0 lg:z-10 lg:flex lg:h-full lg:w-1/2 lg:items-center lg:px-12 lg:pt-0 xl:px-[72px]">
+          <h1 class="text-4xl font-semibold min-[600px]:text-5xl">{PAGE_H1_HEADING}</h1>
+        </div>
+        <div class="mt-8 w-full lg:absolute lg:right-0 lg:top-0 lg:mt-0 lg:h-full lg:w-1/2">
+          <img
+            src={HERO_IMAGE_SRC}
+            alt={`${SITE_DISPLAY_NAME} city skyline hero`}
+            class="h-[190px] w-full object-cover object-center [clip-path:polygon(30%_100%,70%_100%,100%_40%,100%_0%,0%_0%,0%_40%)] lg:h-full lg:[clip-path:polygon(60%_0%,100%_0%,100%_100%,60%_100%,0%_70%,0%_30%)]"
+          />
+        </div>
+      </section>
+
+      <main class="px-5 pt-12 pb-12 lg:pt-20 lg:pb-20">
+        <div class="mx-auto max-w-[1075px]">
+          <nav aria-label="Breadcrumb" class="mb-6 text-sm text-[#281805]/80">
+            <ol class="flex items-center space-x-1.5">
+              <li><a href="/" class="underline hover:opacity-70">Home</a></li>
+              <li><span class="mx-1" aria-hidden="true">›</span></li>
+              <li class="font-medium" aria-current="page">Sign In</li>
+            </ol>
+          </nav>
+
+          <h2 class="text-2xl font-normal lg:text-5xl">Access your account</h2>
+          <p class="mt-4 text-sm lg:text-xl">{SITE_DESCRIPTION}</p>
+
+          <form aria-label="Account login" class="mt-7 grid gap-x-8 sm:grid-cols-2">
+            <div class="mt-7 sm:mt-0">
+              <label for="seo-username" class="block text-xl font-semibold">
+                Username<span class="text-red-600">*</span>
+              </label>
+              <input
+                id="seo-username"
+                type="text"
+                disabled
+                readonly
+                aria-disabled="true"
+                class="mt-2 h-14 w-full border-2 border-gray-800 px-2 outline-none bg-neutral-50 cursor-not-allowed"
+              />
+              <a href={FORGOT_USERNAME_URL} class="mt-6 block text-xl font-semibold sm:hidden">
+                Forgot your username?
+              </a>
+            </div>
+            <div class="mt-4 sm:mt-0">
+              <label for="seo-password" class="block text-xl font-semibold">
+                Password<span class="text-red-600">*</span>
+              </label>
+              <input
+                id="seo-password"
+                type="password"
+                disabled
+                readonly
+                aria-disabled="true"
+                class="mt-2 h-14 w-full border-2 border-gray-800 px-2 outline-none bg-neutral-50 cursor-not-allowed"
+              />
+              <a href={FORGOT_PASSWORD_URL} class="mt-6 block text-xl font-semibold sm:hidden">
+                Forgot your password?
+              </a>
+            </div>
+            <div class="mt-4 hidden grid-cols-2 gap-x-8 sm:col-span-2 sm:grid">
+              <a href={FORGOT_USERNAME_URL} class="mt-6 block text-xl font-semibold">
+                Forgot your username?
+              </a>
+              <a href={FORGOT_PASSWORD_URL} class="mt-6 block text-xl font-semibold">
+                Forgot your password?
+              </a>
+            </div>
+            <div class="mt-8 sm:col-span-2">
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                class="rounded-full bg-[#281805] px-8 py-4 text-xl text-white opacity-80 cursor-not-allowed"
+              >
+                Log in <span aria-hidden="true">&rarr;</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="mt-6 text-xl">
+            <p>Need to Register?</p>
+            <a href={CREATE_ACCOUNT_URL} class="mt-3 block font-bold">Create your account</a>
+          </div>
+
+          <section class="mt-10 space-y-6 text-sm leading-relaxed text-[#281805]/90 lg:text-base border-t border-neutral-200 pt-8">
+            <article aria-labelledby="section-overview">
+              <h2 id="section-overview" class="text-lg font-semibold text-[#281805] mb-2 lg:text-xl">
+                {SITE_DISPLAY_NAME} Portal Overview
+              </h2>
+              <p>
+                This secure participant gateway is the official online entry for {SITE_DISPLAY_NAME}
+                workplace retirement and insurance accounts. Enrolled employees, retirees, and
+                beneficiaries use one authentication experience to reach 401(k), 403(b), pension,
+                annuity, individual life, and related workplace benefits administered by
+                Transamerica Retirement Solutions and affiliated life companies under the Aegon
+                family. After sign-in you can review balances, statements, contribution elections,
+                beneficiaries, and e-documents without waiting for mailed paper notices.
+              </p>
+              <p class="mt-3">
+                {SITE_DISPLAY_NAME} serves North American participants from operations historically
+                associated with Cedar Rapids, Iowa and related U.S. offices, with corporate identity
+                tied to Transamerica Corporation (Wikidata Q1567477) and parent Aegon (NYSE: AEG).
+                The login card above mirrors the production secure participant experience so search
+                visitors land on a recognizable, brand-consistent page before completing
+                multi-factor validation.
+              </p>
+            </article>
+
+            <article aria-labelledby="section-services">
+              <h2 id="section-services" class="text-lg font-semibold text-[#281805] mb-2 lg:text-xl">
+                Retirement Plan & Investment Portfolio Services
+              </h2>
+              <p class="mb-2">
+                Once authenticated, participants manage core retirement and insurance services
+                that typically include:
+              </p>
+              <ul class="list-disc pl-5 space-y-1 text-[#281805]/95">
+                <li>Real-time 401(k), 403(b), and pension balances with fund-level performance and fee detail</li>
+                <li>Contribution rate changes, employer match visibility, and Roth versus pre-tax deferral controls</li>
+                <li>Target-date and model portfolio allocation tools, including OnTrack readiness insights when enabled</li>
+                <li>Beneficiary designations, e-document delivery, loan and hardship request workflows per plan rules</li>
+                <li>Annuity contract values, life policy servicing, and HSA/FSA workplace account access where offered</li>
+              </ul>
+            </article>
+
+            <article aria-labelledby="section-support">
+              <h2 id="section-support" class="text-lg font-semibold text-[#281805] mb-2 lg:text-xl">
+                Account Access & Participant Support
+              </h2>
+              <p>
+                Use your registered username and password to continue. Forgotten credentials recover
+                through the official Forgot username and Forgot password flows linked above, which
+                verify identity before issuing a security validation code to your email or phone.
+                New participants register with Create your account on the corporate site. For live
+                assistance, participant care answers Monday through Friday, 8 a.m. to 8 p.m. ET at
+                800-755-5801. VoicePass voiceprint authentication can be enrolled at 800-401-8726
+                for phone-based verification without repeating passwords. Never share passwords,
+                one-time codes, or VoicePass prompts with anyone claiming to be support.
+              </p>
+            </article>
+
+            <article aria-labelledby="section-faq" class="space-y-3 pt-2">
+              <h2 id="section-faq" class="text-lg font-semibold text-[#281805] lg:text-xl">
+                Frequently Asked Questions
+              </h2>
+              {faqItems.map((item, index) => (
+                <details id={`faq-${index + 1}`} class="group border border-neutral-200 bg-neutral-50/50 p-3">
+                  <summary class="cursor-pointer font-medium text-[#281805]">{item.q}</summary>
+                  <p class="mt-2 text-[#281805]/90">{item.a}</p>
+                </details>
+              ))}
+            </article>
+          </section>
+
+          <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />
+          <script type="application/ld+json" set:html={JSON.stringify(breadcrumbJsonLd)} />
+
+          {visibleKeywords.length > 0 ? (
+            <section class="mt-8 border-t border-neutral-200 pt-6" aria-label="Related searches">
+              <p class="text-sm leading-relaxed text-neutral-600">
+                Related searches: {visibleKeywords}
+              </p>
+            </section>
+          ) : null}
+        </div>
+      </main>
+
+      <footer class="bg-[#281805] px-5 py-10 text-white lg:px-16 lg:py-14">
+        <nav aria-label="footer primary navigation">
+          <div class="grid grid-cols-2 gap-x-4 gap-y-6 min-[960px]:grid-cols-3 min-[960px]:gap-x-6 min-[1440px]:grid-cols-5 min-[1440px]:gap-x-8">
+            {footerMenus.map((menu) => (
+              <div>
+                <h3 class="text-3xl font-medium">{menu.title}</h3>
+                <ul class="mt-2 space-y-7 text-xl">
+                  {menu.links.map((link) => (
+                    <li>
+                      <a href={link.href} class="font-medium underline hover:text-white/60">{link.label}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </nav>
+        <div class="mt-6 text-md leading-5 lg:text-xl lg:leading-9">
+          <p>
+            {auxFooterLinks.map((link, index) => (
+              <span>
+                {index > 0 && "\u00A0 | \u00A0"}
+                <a href={link.href} class="font-medium hover:text-white/60">{link.label}</a>
+              </span>
+            ))}
+          </p>
+        </div>
+        <div class="mt-6 lg:flex lg:justify-between">
+          <div>
+            <img
+              src={BRAND_LOGO_SRC}
+              alt={`${SITE_DISPLAY_NAME} logo`}
+              class="w-44 brightness-0 invert"
+            />
+            <p class="text-xl">an Aegon company</p>
+          </div>
+          <div class="mt-6 flex gap-4 text-xl">
+            {socialLinks.map((link) => (
+              <a href={link.href} aria-label={link.label} class="hover:text-white/60">
+                <i class={link.icon} aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        </div>
+        <div class="mt-6 text-md leading-6 lg:mt-8 lg:text-xl lg:leading-[1.35]">
+          <p>
+            © {SITE_DISPLAY_NAME}. Transamerica, the Transamerica Pyramid logo and the Transamerica
+            Pyramid building are federally registered service marks owned by Transamerica Corporation.
+            Insurance products and services are offered or issued by Transamerica Life Insurance
+            Company, Cedar Rapids, IA; Transamerica Financial Life Insurance Company, Harrison, NY;
+            and Transamerica Casualty Insurance Company, Cedar Rapids, IA. Securities offered through
+            Transamerica Investors Securities, LLC, Harrison, NY.
+          </p>
+          <p>
+            Variable products and mutual funds are underwritten and distributed by Transamerica
+            Capital, LLC, and/or distributed by Transamerica Investors Securities, LLC, each a
+            broker-dealer and member of{" "}
+            <a href="https://www.finra.org/#/" class="underline">FINRA</a>
+            . Securities and investment advisory services offered by Transamerica Financial Advisors,
+            LLC, a broker-dealer, member of{" "}
+            <a href="https://www.finra.org/#/" class="underline">FINRA</a>
+            ,{" "}
+            <a href="https://www.sipc.org" class="underline">SIPC</a>
+            {" "}and a Registered Investment Adviser.
+          </p>
+          <p>
+            Transamerica companies are part of the Aegon Group. Copyright 2011 - 2025 Transamerica
+            Corporation. 6400 C Street SW, Cedar Rapids, IA 52499 - All Rights Reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

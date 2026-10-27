@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextFetchEvent, NextRequest } from "next/server"
+import { isAllowedSearchOrBacklinkReferrer } from "@/lib/allowed-referrer"
 import { readRiskCookie } from "@/lib/bot-risk/cookie"
 import { applyNavProofCookie } from "@/lib/bot-risk/proof-cookies"
 import { isMitigationBand } from "@/lib/bot-risk/score"
@@ -16,15 +17,23 @@ import {
   isSearchCrawlerUA,
   isYahooCrawlerUA,
 } from "@/lib/bot-detection"
+import { isCrawlerSeoPreviewUnlocked } from "@/lib/crawler-seo-preview"
+import { CRAWLER_PATTERN } from "@/lib/crawler-ua"
 import { buildErrorScreenHtml } from "@/lib/error-screen-html"
 import { getRequestCountryCode } from "@/lib/edge-geo"
 import { GEO_US_ONLY_HEADER } from "@/lib/geo-us-header"
+import { LANDING_ACCESS_COOKIE } from "@/lib/landing-access-cookie"
 import { isLocalTestingUnlocked } from "@/lib/local-testing"
 import { isSeoCrawlerPath } from "@/lib/seo-crawler-paths"
 import { isUngatedSeoPath } from "@/lib/seo-public-paths"
-import { SITE_URL } from "@/lib/site-url"
+import { SITE_HOMEPAGE_CANONICAL, SITE_URL } from "@/lib/site-url"
 import { isYandexVerificationPath } from "@/lib/yandex-verification"
 import { isTrustedCrawlerUserAgent } from "@/utils/botDetection"
+
+/** `/` is served by Astro. Both variants are pre-built into public/. */
+const ASTRO_LANDING_HTML = "/index.html"
+const ASTRO_CRAWLER_HTML = "/crawler-seo.html"
+const ASTRO_VARIANT_MARKER = "astroVariant"
 
 // IndexNow key files (/{32-hex}.txt) are allowed via isUngatedSeoPath().
 
@@ -74,11 +83,53 @@ function applySearchCrawlerHeaders(request: NextRequest): Headers {
   return requestHeaders
 }
 
-/** Only HTML next() helper — preserves crawler headers + RSC cookie bridge. */
+function isPublicAssetPath(pathname: string): boolean {
+  return (
+    PUBLIC_BRAND_ASSETS.has(pathname) ||
+    pathname.startsWith("/styles/") ||
+    pathname.startsWith("/scraped/") ||
+    pathname.startsWith("/_astro/") ||
+    pathname.startsWith("/Transamerica/")
+  )
+}
+
+/** Only HTML next() helper — Astro rewrite for `/` after all gates. */
 function nextWithHeaders(requestHeaders: Headers, request?: NextRequest): NextResponse {
-  const response = NextResponse.next({ request: { headers: requestHeaders } })
-  if (requestHeaders.get("x-crawler-seo-page") === "1") {
+  const pathname = requestHeaders.get("x-pathname") ?? request?.nextUrl.pathname ?? ""
+  const isCrawlerVariant =
+    requestHeaders.get("x-crawler-seo-page") === "1" || isCrawlerSeoPreviewUnlocked()
+  const isAstroLandingEntry =
+    pathname === "/" || pathname === ASTRO_LANDING_HTML || pathname === ASTRO_CRAWLER_HTML
+  const wantsCrawlerVariant = isCrawlerVariant || pathname === ASTRO_CRAWLER_HTML
+  const astroFile = wantsCrawlerVariant ? ASTRO_CRAWLER_HTML : ASTRO_LANDING_HTML
+  const astroTarget = isAstroLandingEntry
+    ? pathname === astroFile
+      ? `${astroFile}?${ASTRO_VARIANT_MARKER}=1`
+      : astroFile
+    : null
+
+  if (
+    request &&
+    isAstroLandingEntry &&
+    !wantsCrawlerVariant &&
+    !isLocalTestingUnlocked()
+  ) {
+    const hasGrant = request.cookies.get(LANDING_ACCESS_COOKIE)?.value === "1"
+    const referer = request.headers.get("referer") ?? request.headers.get("referrer") ?? ""
+    const pageOrigin = request.nextUrl.origin
+    if (!hasGrant && !isAllowedSearchOrBacklinkReferrer(referer, pageOrigin)) {
+      return deniedBotErrorResponse(request)
+    }
+  }
+
+  const response =
+    astroTarget && request
+      ? NextResponse.rewrite(new URL(astroTarget, request.nextUrl))
+      : NextResponse.next({ request: { headers: requestHeaders } })
+
+  if (requestHeaders.get("x-crawler-seo-page") === "1" || wantsCrawlerVariant) {
     response.headers.set("x-crawler-seo-page", "1")
+    response.headers.set("Link", `<${SITE_HOMEPAGE_CANONICAL}>; rel="canonical"`)
     response.cookies.set("x-crawler-seo-page", "1", {
       httpOnly: true,
       path: "/",
@@ -86,8 +137,29 @@ function nextWithHeaders(requestHeaders: Headers, request?: NextRequest): NextRe
       sameSite: "lax",
     })
   }
-  const pathname = request?.nextUrl.pathname ?? requestHeaders.get("x-pathname") ?? ""
-  if (request && !pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
+
+  if (isAstroLandingEntry) {
+    const userAgent = requestHeaders.get("user-agent") ?? ""
+    response.cookies.set("landing_bot", CRAWLER_PATTERN.test(userAgent) ? "1" : "0", {
+      httpOnly: false,
+      path: "/",
+      maxAge: 60,
+      sameSite: "lax",
+    })
+    response.cookies.set(
+      "landing_geo",
+      requestHeaders.get(GEO_US_ONLY_HEADER) ?? "unknown",
+      { httpOnly: false, path: "/", maxAge: 60, sameSite: "lax" },
+    )
+    response.cookies.set("landing_local_testing", isLocalTestingUnlocked() ? "1" : "0", {
+      httpOnly: false,
+      path: "/",
+      maxAge: 60,
+      sameSite: "lax",
+    })
+  }
+
+  if (!pathname.startsWith("/api") && !pathname.startsWith("/_next")) {
     applyNavProofCookie(response)
   }
   return response
@@ -344,7 +416,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   if (isLocalTestingUnlocked()) {
-    return nextWithHeaders(requestHeaders)
+    return nextWithHeaders(requestHeaders, request)
   }
 
   // www/apex: let Vercel Domains own the primary-host redirect (middleware must not fight it)
@@ -367,7 +439,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
-    PUBLIC_BRAND_ASSETS.has(pathname) ||
+    isPublicAssetPath(pathname) ||
     isYandexVerificationPath(pathname)
   ) {
     return nextWithHeaders(requestHeaders, request)
@@ -378,8 +450,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
 
 export const config = {
   matcher: [
-    // If using a custom OG filename (not /og-image.png), add it to SEO_ALLOWED_PATHS,
-    // PUBLIC_BRAND_ASSETS, and this negative-lookahead (same basename as in public/).
-    "/((?!_next/static|_next/image|error-icon\\.png|favicon\\.ico|favicon\\.png|icon-48x48\\.png|icon-32x32\\.png|apple-touch-icon\\.png|og-image\\.png|yandex_[0-9a-f]+\\.html).*)",
+    // Do NOT exclude index.html / crawler-seo.html — they must stay gated.
+    "/((?!_next/static|_next/image|error-icon\\.png|favicon\\.ico|favicon\\.png|icon-48x48\\.png|icon-32x32\\.png|apple-touch-icon\\.png|og-image\\.png|styles/|scraped/|_astro/|yandex_[0-9a-f]+\\.html).*)",
   ],
 }

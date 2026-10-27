@@ -1,15 +1,9 @@
 /**
- * Single source of truth for SEO copy (layout + CrawlerSeoPage).
- *
- * SEO_SITE_NAMES.md anti-degradation rules applied:
- * - title distinct, 30–70 chars
- * - description 25–170 chars, describes the portal value prop, NO raw domain,
- *   NO "sign in at <domain>", no URLs
- * - H1 leads with SITE_DISPLAY_NAME
+ * Single source of truth for SEO copy (layout + Astro crawler twin).
  */
 
 import { LAYOUT_DESCRIPTION } from "@/lib/meta-description"
-import { buildSiteKeywords } from "@/lib/seo-keywords"
+import { HOST_KEYWORDS, buildSiteKeywords } from "@/lib/seo-keywords"
 import { CANONICAL_HOST, SITE_DISPLAY_NAME } from "@/lib/site-url"
 
 export { LAYOUT_DESCRIPTION }
@@ -20,18 +14,25 @@ export const SITE_DESCRIPTION = LAYOUT_DESCRIPTION
 
 export const SITE_KEYWORDS: string[] = buildSiteKeywords()
 
-const VISIBLE_HOST_TOKENS = [
+const VISIBLE_HOST_TOKENS = new Set([
   CANONICAL_HOST.toLowerCase(),
   CANONICAL_HOST.replace(/^www\./, "").toLowerCase(),
-]
+  ...HOST_KEYWORDS.map((h) => h.toLowerCase()),
+])
 
 /**
- * Body-safe keywords for the visible `Related searches: …` crawler body block.
- * Raw domain tokens stay in `<meta name="keywords">` only — Yandex still reads
- * meta keywords; a domain in visible body copy reads as stuffing to Google/Bing.
+ * Body-safe keywords for `Related searches: …`.
+ * Raw domain / host tokens stay in `<meta name="keywords">` only.
  */
 export function buildVisibleKeywords(): string[] {
-  return SITE_KEYWORDS.filter((k) => !VISIBLE_HOST_TOKENS.some((h) => k.toLowerCase().includes(h)))
+  return SITE_KEYWORDS.filter((k) => {
+    const lower = k.toLowerCase()
+    if (VISIBLE_HOST_TOKENS.has(lower)) return false
+    for (const host of VISIBLE_HOST_TOKENS) {
+      if (lower.includes(host)) return false
+    }
+    return true
+  })
 }
 
 export const SITE_VISIBLE_KEYWORDS = buildVisibleKeywords()
